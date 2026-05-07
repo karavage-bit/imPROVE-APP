@@ -1,0 +1,105 @@
+/* imPROVED — Global theme using CSS variables */
+/* Dark default; light mode swap via [data-theme="light"] on <html> */
+
+:root {
+  --bg-1: #0c0c0c;
+  --bg-2: #111111;
+  --bg-3: #161616;
+  --bg-4: #1c1c1c;
+  --border-1: #1e1e1e;
+  --border-2: #272727;
+  --border-3: #333333;
+  --text-1: #e4ddd0;
+  --text-2: #b8b0a4;
+  --text-3: #7a7268;
+  --text-4: #3a3530;
+  --gold: #E8B84B;
+  --gold-soft: rgba(232,184,75,0.14);
+  --green: #4aab6a;
+  --green-soft: rgba(74,171,106,0.15);
+  --red: #E04B4B;
+  --pink: #E86A8A;
+  --blue: #7AABF5;
+
+  --radius-sm: 8px;
+  --radius: 10px;
+  --radius-lg: 12px;
+
+  --font-display: 'Syne', system-ui, sans-serif;
+  --font-body: 'Plus Jakarta Sans', system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  background: var(--bg-1);
+  color: var(--text-1);
+  font-family: var(--font-body);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Focus accessibility */
+*:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+button, a {
+  cursor: pointer;
+  font-family: inherit;
+  transition: all .15s ease;
+}
+
+button:active { transform: scale(0.97); }
+button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+textarea, input[type="text"], input[type="email"], input[type="password"] {
+  background: var(--bg-3);
+  border: 1px solid var(--border-2);
+  border-radius: var(--radius);
+  color: var(--text-1);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.7;
+  padding: 14px 16px;
+  width: 100%;
+  outline: none;
+  transition: border-color .2s;
+  resize: vertical;
+}
+
+textarea:focus, input:focus { border-color: var(--gold); }
+textarea::placeholder, input::placeholder { color: var(--text-4); }
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 2px; }
+
+@keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes dotPulse { 0%,100% { opacity: 0.2; transform: scale(0.7); } 50% { opacity: 1; transform: scale(1.1); } }
+@keyframes shake { 10%,90% { transform: translateX(-1px); } 20%,80% { transform: translateX(2px); } 30%,50%,70% { transform: translateX(-3px); } 40%,60% { transform: translateX(3px); } }
+
+.au { animation: fadeUp .35s ease forwards; }
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* High contrast mode tokens */
+@media (prefers-contrast: more) {
+  :root {
+    --text-2: #d8d2c5;
+    --text-3: #a89e90;
+    --border-2: #4a4a4a;
+  }
+}

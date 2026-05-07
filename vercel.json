@@ -1,0 +1,19 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/send-nudges",
+      "schedule": "0 * * * *"
+    }
+  ],
+  "functions": {
+    "pages/api/socratic.js": {
+      "maxDuration": 30
+    },
+    "pages/api/verification-pdf.js": {
+      "maxDuration": 15
+    },
+    "pages/api/cron/send-nudges.js": {
+      "maxDuration": 60
+    }
+  }
+}
