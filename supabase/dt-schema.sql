@@ -40,6 +40,7 @@ ALTER TABLE dt_cohorts ENABLE ROW LEVEL SECURITY;
 -- Curriculum nodes. cohort_id = null means the default curriculum.
 -- Instructors may create cohort-scoped overrides (same id, different cohort_id).
 CREATE TABLE IF NOT EXISTS dt_days (
+  pk             uuid NOT NULL DEFAULT gen_random_uuid(),
   id             text NOT NULL,
   cohort_id      uuid REFERENCES dt_cohorts(id) ON DELETE CASCADE,
   week           int  NOT NULL,
@@ -61,12 +62,9 @@ CREATE TABLE IF NOT EXISTS dt_days (
   display_order  int  NOT NULL DEFAULT 0,
   created_at     timestamptz NOT NULL DEFAULT now(),
   updated_at     timestamptz NOT NULL DEFAULT now(),
-  PRIMARY KEY (id, COALESCE(cohort_id, '00000000-0000-0000-0000-000000000000'::uuid))
+  PRIMARY KEY (pk),
+  UNIQUE NULLS NOT DISTINCT (id, cohort_id)
 );
-
--- Simpler unique constraint for queries
-CREATE UNIQUE INDEX IF NOT EXISTS dt_days_id_cohort_uq
-  ON dt_days (id, cohort_id NULLS FIRST);
 
 CREATE TRIGGER dt_days_updated_at
   BEFORE UPDATE ON dt_days
