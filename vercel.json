@@ -3,10 +3,6 @@
     {
       "path": "/api/cron/send-nudges",
       "schedule": "0 * * * *"
-    },
-    {
-      "path": "/api/cron/dt-flags",
-      "schedule": "0 2 * * *"
     }
   ],
   "functions": {
@@ -17,9 +13,6 @@
       "maxDuration": 15
     },
     "pages/api/cron/send-nudges.js": {
-      "maxDuration": 60
-    },
-    "pages/api/cron/dt-flags.js": {
       "maxDuration": 60
     }
   }
