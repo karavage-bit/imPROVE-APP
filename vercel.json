@@ -1,18 +1,12 @@
 {
   "crons": [
     {
-      "path": "/api/cron/send-nudges",
-      "schedule": "0 * * * *"
+      "path": "/api/cron/dt-flags",
+      "schedule": "0 2 * * *"
     }
   ],
   "functions": {
-    "pages/api/socratic.js": {
-      "maxDuration": 30
-    },
-    "pages/api/verification-pdf.js": {
-      "maxDuration": 15
-    },
-    "pages/api/cron/send-nudges.js": {
+    "pages/api/cron/dt-flags.js": {
       "maxDuration": 60
     }
   }
