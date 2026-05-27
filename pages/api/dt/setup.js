@@ -1,16 +1,14 @@
-// One-time database setup — visit /api/dt/setup?secret=tol2026
-// Requires SUPABASE_ACCESS_TOKEN in Vercel env vars
-// Get it: supabase.com → click your name top-right → Account → Access Tokens → New token
-// SUPABASE_SERVICE_ROLE_KEY should already be in Vercel from the existing app
+// One-time database setup
+// Usage: /api/dt/setup?secret=tol2026&token=YOUR_SUPABASE_PAT
+// OR: set SUPABASE_ACCESS_TOKEN in Vercel env vars and visit /api/dt/setup?secret=tol2026
 
 export default async function handler(req, res) {
   if (req.query.secret !== 'tol2026') return res.status(401).end();
 
-  const token = process.env.SUPABASE_ACCESS_TOKEN;
+  const token = req.query.token || process.env.SUPABASE_ACCESS_TOKEN;
   if (!token) {
     return res.status(500).json({
-      error: 'SUPABASE_ACCESS_TOKEN not set',
-      fix: 'supabase.com → your name top-right → Account → Access Tokens → Generate new token. Add to Vercel env vars, redeploy, then visit this URL again.',
+      error: 'No token. Pass ?token=YOUR_PAT or set SUPABASE_ACCESS_TOKEN in Vercel.',
     });
   }
 
@@ -54,13 +52,13 @@ export default async function handler(req, res) {
     buckets['dt-photos'] = p.error ? { ok: false, note: p.error.message } : { ok: true };
     buckets['dt-voices'] = v.error ? { ok: false, note: v.error.message } : { ok: true };
   } else {
-    buckets['dt-photos'] = { ok: false, note: 'SUPABASE_SERVICE_ROLE_KEY not set — create dt-photos manually in Supabase Storage dashboard' };
-    buckets['dt-voices'] = { ok: false, note: 'SUPABASE_SERVICE_ROLE_KEY not set — create dt-voices manually in Supabase Storage dashboard' };
+    buckets['dt-photos'] = { ok: false, note: 'SUPABASE_SERVICE_ROLE_KEY not set' };
+    buckets['dt-voices'] = { ok: false, note: 'SUPABASE_SERVICE_ROLE_KEY not set' };
   }
 
   return res.status(200).json({
     ok: seed.ok,
-    message: seed.ok ? 'Done! Database and storage are ready.' : 'Schema OK but seed failed — check seed details.',
+    message: seed.ok ? 'Done! Database and storage are ready.' : 'Schema OK but seed failed.',
     schema,
     seed,
     buckets,
