@@ -1,6 +1,7 @@
 // One-time database setup — visit /api/dt/setup?secret=tol2026
 // Requires SUPABASE_ACCESS_TOKEN in Vercel env vars
 // Get it: supabase.com → click your name top-right → Account → Access Tokens → New token
+// SUPABASE_SERVICE_ROLE_KEY should already be in Vercel from the existing app
 
 export default async function handler(req, res) {
   if (req.query.secret !== 'tol2026') return res.status(401).end();
@@ -32,11 +33,37 @@ export default async function handler(req, res) {
 
   const seed = await runSQL('seed', SEED_SQL);
 
+  // Create storage buckets using service role key (already in Vercel from the existing app)
+  const buckets = {};
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (serviceKey) {
+    const { createClient } = await import('@supabase/supabase-js');
+    const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, serviceKey);
+    const [p, v] = await Promise.all([
+      admin.storage.createBucket('dt-photos', {
+        public: false,
+        fileSizeLimit: 512000,
+        allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
+      }),
+      admin.storage.createBucket('dt-voices', {
+        public: false,
+        fileSizeLimit: 1048576,
+        allowedMimeTypes: ['audio/webm', 'audio/ogg', 'audio/wav', 'audio/mp4'],
+      }),
+    ]);
+    buckets['dt-photos'] = p.error ? { ok: false, note: p.error.message } : { ok: true };
+    buckets['dt-voices'] = v.error ? { ok: false, note: v.error.message } : { ok: true };
+  } else {
+    buckets['dt-photos'] = { ok: false, note: 'SUPABASE_SERVICE_ROLE_KEY not set — create dt-photos manually in Supabase Storage dashboard' };
+    buckets['dt-voices'] = { ok: false, note: 'SUPABASE_SERVICE_ROLE_KEY not set — create dt-voices manually in Supabase Storage dashboard' };
+  }
+
   return res.status(200).json({
     ok: seed.ok,
-    message: seed.ok ? 'Done! Database is ready.' : 'Schema OK, seed failed.',
+    message: seed.ok ? 'Done! Database and storage are ready.' : 'Schema OK but seed failed — check seed details.',
     schema,
     seed,
+    buckets,
   });
 }
 
