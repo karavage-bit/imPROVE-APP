@@ -296,7 +296,7 @@ body{font-family:'Lora',serif;background:#2c1810;color:#1a2742;-webkit-font-smoo
       <div class="cmp-north">
         <div class="cmp-north-label">Your North Star</div>
         <div id="cmp-north-text" style="font-family:'Lora',serif;font-style:italic;color:var(--smoke);font-size:0.82rem;line-height:1.6">
-          The horizon entries you’ve written appear here as your guiding north.
+          The horizon entries you've written appear here as your guiding north.
         </div>
       </div>
       <div class="cmp-recent">
@@ -414,7 +414,7 @@ body{font-family:'Lora',serif;background:#2c1810;color:#1a2742;-webkit-font-smoo
 // ========== CONFIGURATION ==========
 // After deploying dt-sheets.gs as a Google Apps Script Web App,
 // paste the deployment URL here:
-var SHEETS_URL = '';
+var SHEETS_URL = 'https://script.google.com/macros/s/AKfycbzWMSjYQFzw4aPESTuWCliaWN5ZGsUH8RmcFFxeA-WAM1Nl6I8E4_EbseKFaHN7-v-Y6A/exec';
 // e.g. 'https://script.google.com/macros/s/AKfycb.../exec'
 
 // ========== CURRICULUM ==========
@@ -436,7 +436,7 @@ var DAYS = [
   {day:15,week:3,theme:'Voice',sub:'How do you speak truth that matters?'},
   {day:16,week:3,theme:'Service',sub:'Leadership is service. What does that mean to you?'},
   {day:17,week:3,theme:'Power',sub:'How do you use influence ethically?'},
-  {day:18,week:3,theme:'Empathy',sub:'Step into another’s story.'},
+  {day:18,week:3,theme:'Empathy',sub:'Step into another\'s story.'},
   {day:19,week:3,theme:'Integrity',sub:'When does your walk match your talk?'},
   {day:20,week:3,theme:'Halfway',sub:'You are at the center of the journey. Look both ways.'},
   {day:21,week:4,theme:'Community',sub:'What do you owe the people around you?'},
@@ -582,7 +582,7 @@ function renderMap(){
     weeks[w].forEach(function(d){
       var e=state.entries[d.day];
       var filled=e&&(e.realMoment||e.horizon||e.pin);
-      html+='<div class="day-node'+(filled?' filled':'')+'" onclick="openDay('+d.day+')">';
+      html+='<div class="day-node'+(filled?' filled':'')'" onclick="openDay('+d.day+')">';
       html+='<div class="day-num">'+d.day+'</div>';
       html+='<div class="day-theme">'+escHtml(d.theme)+'</div>';
       if(filled&&e.pin) html+='<div style="font-size:0.8rem">'+e.pin+'</div>';
@@ -869,7 +869,7 @@ function renderReelCard(){
   document.getElementById('reel-card').className='reel-card';
   document.getElementById('reel-card').innerHTML=
     '<div><div class="reel-day-num">Day '+e.day+'</div><div class="reel-day-theme">'+(d?d.theme.toUpperCase():'')+'</div><div class="reel-pin">'+(e.pin||'•')+'</div></div>'+
-    (e.realMoment?'<div class="reel-text">“'+escHtml(e.realMoment)+'”</div>':'<div class="reel-text" style="opacity:0.4">(no entry)</div>')+
+    (e.realMoment?'<div class="reel-text">"'+escHtml(e.realMoment)+'"</div>':'<div class="reel-text" style="opacity:0.4">(no entry)</div>')+
     (e.horizon?'<div class="reel-horizon">→ '+escHtml(e.horizon)+'</div>':'');
   document.getElementById('reel-counter').textContent=(state.reelIndex+1)+' / '+reelDays.length;
   document.getElementById('reel-prev').disabled=state.reelIndex===0;
