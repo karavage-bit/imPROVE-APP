@@ -1,0 +1,1686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Distance Traveled — TOL Summer 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&family=IM+Fell+English+SC&family=Lora:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
+<style>
+/* ===== RESET & BASE ===== */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{
+  font-family:'Lora',serif;
+  background:#2c1810;
+  color:#1a2742;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ===== VARIABLES ===== */
+:root{
+  --paper:#f1e7d2;
+  --paper-dark:#e8d8b8;
+  --paper-darker:#d4c4a0;
+  --ink:#1a2742;
+  --ink-light:#3a4868;
+  --gold:#b8893f;
+  --gold-light:#d4a84e;
+  --burgundy:#7a3b3b;
+  --smoke:#5d5547;
+  --terra:#a05a3c;
+  --aged:#8b7355;
+  --shadow:rgba(26,39,66,0.2);
+}
+
+/* ===== PARCHMENT TEXTURE ===== */
+.parchment{
+  background:var(--paper);
+  background-image:
+    radial-gradient(ellipse at 20% 30%, rgba(180,150,80,0.08) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 70%, rgba(120,80,40,0.06) 0%, transparent 50%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+}
+
+/* ===== LAYOUT SHELL ===== */
+#app{
+  display:flex;
+  flex-direction:column;
+  height:100vh;
+  max-width:900px;
+  margin:0 auto;
+  position:relative;
+}
+
+/* ===== TOP HEADER ===== */
+#hdr{
+  background:var(--ink);
+  padding:10px 16px 8px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  flex-shrink:0;
+  border-bottom:2px solid var(--gold);
+}
+#hdr-title{
+  font-family:'Cinzel',serif;
+  color:var(--gold);
+  font-size:1.1rem;
+  letter-spacing:0.08em;
+  line-height:1.1;
+}
+#hdr-title span{
+  display:block;
+  font-size:0.6rem;
+  color:rgba(184,137,63,0.7);
+  letter-spacing:0.2em;
+  text-transform:uppercase;
+}
+#hdr-student{
+  font-family:'IM Fell English SC',serif;
+  color:var(--paper-dark);
+  font-size:0.8rem;
+  text-align:right;
+  cursor:pointer;
+  line-height:1.3;
+}
+#hdr-student small{
+  display:block;
+  color:var(--gold);
+  font-size:0.65rem;
+  font-family:'Lora',serif;
+  font-style:italic;
+}
+#sync-badge{
+  width:8px;height:8px;border-radius:50%;
+  background:#888;
+  margin-left:8px;
+  display:inline-block;
+  vertical-align:middle;
+  transition:background 0.5s;
+}
+#sync-badge.synced{background:#4caf50}
+#sync-badge.syncing{background:var(--gold);animation:pulse 0.8s infinite}
+#sync-badge.error{background:var(--burgundy)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+
+/* ===== PROGRESS BAR ===== */
+#prog-bar{
+  height:4px;
+  background:var(--ink);
+  flex-shrink:0;
+}
+#prog-fill{
+  height:100%;
+  background:linear-gradient(90deg,var(--burgundy),var(--gold));
+  transition:width 0.6s ease;
+  width:0%;
+}
+
+/* ===== NAV TABS ===== */
+#nav{
+  display:flex;
+  background:var(--ink);
+  border-bottom:1px solid rgba(184,137,63,0.3);
+  flex-shrink:0;
+}
+.nav-btn{
+  flex:1;
+  background:none;
+  border:none;
+  color:rgba(184,137,63,0.55);
+  font-family:'Cinzel',serif;
+  font-size:0.6rem;
+  letter-spacing:0.12em;
+  text-transform:uppercase;
+  padding:8px 4px;
+  cursor:pointer;
+  transition:all 0.2s;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:3px;
+}
+.nav-btn svg{width:16px;height:16px;opacity:0.6}
+.nav-btn.active{
+  color:var(--gold);
+  border-bottom:2px solid var(--gold);
+}
+.nav-btn.active svg{opacity:1}
+.nav-btn:hover{color:var(--gold-light)}
+
+/* ===== VIEW CONTAINER ===== */
+#views{
+  flex:1;
+  overflow:hidden;
+  position:relative;
+}
+.view{
+  position:absolute;
+  inset:0;
+  overflow-y:auto;
+  display:none;
+  -webkit-overflow-scrolling:touch;
+}
+.view.active{display:block}
+
+/* ===== MAP VIEW ===== */
+#view-map{
+  background:var(--paper);
+  background-image:
+    radial-gradient(ellipse at 20% 30%,rgba(180,150,80,0.12) 0%,transparent 60%),
+    radial-gradient(ellipse at 80% 70%,rgba(120,80,40,0.08) 0%,transparent 50%);
+}
+.map-inner{
+  min-height:100%;
+  padding:16px;
+  position:relative;
+}
+.map-title{
+  text-align:center;
+  font-family:'Cinzel',serif;
+  color:var(--ink);
+  font-size:1.1rem;
+  letter-spacing:0.15em;
+  margin-bottom:4px;
+}
+.map-sub{
+  text-align:center;
+  font-family:'Lora',serif;
+  font-style:italic;
+  color:var(--smoke);
+  font-size:0.75rem;
+  margin-bottom:16px;
+}
+
+/* Compass Rose */
+.compass-container{
+  display:flex;
+  justify-content:center;
+  margin:0 auto 20px;
+  max-width:200px;
+}
+.compass-svg{width:180px;height:180px}
+
+/* Week separators */
+.week-block{
+  margin-bottom:20px;
+  border:1px solid var(--paper-darker);
+  border-radius:6px;
+  overflow:hidden;
+}
+.week-label{
+  background:var(--ink);
+  color:var(--gold);
+  font-family:'Cinzel',serif;
+  font-size:0.65rem;
+  letter-spacing:0.2em;
+  text-transform:uppercase;
+  padding:5px 12px;
+}
+.week-days{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(72px,1fr));
+  gap:6px;
+  padding:10px;
+  background:var(--paper);
+}
+
+/* Day Node */
+.day-node{
+  background:var(--paper-dark);
+  border:1.5px solid var(--paper-darker);
+  border-radius:6px;
+  padding:8px 6px;
+  cursor:pointer;
+  transition:all 0.2s;
+  text-align:center;
+  position:relative;
+  min-height:64px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+}
+.day-node:hover{
+  border-color:var(--gold);
+  transform:translateY(-1px);
+  box-shadow:0 2px 8px var(--shadow);
+}
+.day-node.filled{
+  background:linear-gradient(135deg,#f8f0e0,var(--paper-dark));
+  border-color:var(--gold);
+}
+.day-node.filled::after{
+  content:'';
+  position:absolute;
+  top:4px;right:4px;
+  width:6px;height:6px;
+  border-radius:50%;
+  background:var(--gold);
+}
+.day-node.today{
+  border-color:var(--burgundy);
+  box-shadow:0 0 0 2px rgba(122,59,59,0.3);
+}
+.day-num{
+  font-family:'Cinzel',serif;
+  color:var(--ink);
+  font-size:1rem;
+  font-weight:700;
+  line-height:1;
+}
+.day-theme{
+  font-family:'Lora',serif;
+  font-style:italic;
+  color:var(--smoke);
+  font-size:0.52rem;
+  line-height:1.2;
+  margin-top:3px;
+  max-width:100%;
+  word-break:break-word;
+}
+
+/* ===== DAY PANEL (slide-up overlay) ===== */
+#day-panel{
+  position:fixed;
+  bottom:0;left:50%;transform:translateX(-50%) translateY(100%);
+  width:100%;max-width:900px;
+  background:var(--paper);
+  border-radius:16px 16px 0 0;
+  box-shadow:0 -4px 24px rgba(0,0,0,0.4);
+  transition:transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
+  z-index:100;
+  max-height:88vh;
+  display:flex;
+  flex-direction:column;
+  background-image:radial-gradient(ellipse at 20% 20%,rgba(184,137,63,0.06) 0%,transparent 60%);
+}
+#day-panel.open{transform:translateX(-50%) translateY(0)}
+#panel-handle{
+  width:40px;height:4px;
+  background:var(--paper-darker);
+  border-radius:2px;
+  margin:10px auto 0;
+  cursor:pointer;
+  flex-shrink:0;
+}
+#panel-header{
+  padding:12px 20px 10px;
+  border-bottom:1px solid var(--paper-darker);
+  flex-shrink:0;
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:8px;
+}
+#panel-day-num{
+  font-family:'Cinzel',serif;
+  font-size:2rem;
+  font-weight:700;
+  color:var(--ink);
+  line-height:1;
+}
+#panel-day-info{
+  flex:1;
+}
+#panel-day-theme{
+  font-family:'Cinzel',serif;
+  color:var(--burgundy);
+  font-size:0.85rem;
+  font-weight:600;
+  letter-spacing:0.05em;
+}
+#panel-day-sub{
+  font-family:'Lora',serif;
+  font-style:italic;
+  color:var(--smoke);
+  font-size:0.75rem;
+  margin-top:2px;
+}
+#panel-close{
+  background:none;border:none;
+  color:var(--smoke);
+  font-size:1.5rem;
+  cursor:pointer;
+  line-height:1;
+  padding:0 4px;
+}
+#panel-body{
+  flex:1;
+  overflow-y:auto;
+  padding:16px 20px 24px;
+  -webkit-overflow-scrolling:touch;
+}
+.field-label{
+  font-family:'Cinzel',serif;
+  color:var(--ink);
+  font-size:0.62rem;
+  letter-spacing:0.18em;
+  text-transform:uppercase;
+  margin-bottom:5px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+.field-label .char-count{
+  font-family:'Lora',serif;
+  font-style:normal;
+  color:var(--smoke);
+  font-size:0.6rem;
+  letter-spacing:0;
+}
+.field-prompt{
+  font-family:'Lora',serif;
+  font-style:italic;
+  color:var(--smoke);
+  font-size:0.72rem;
+  margin-bottom:6px;
+}
+.panel-textarea{
+  width:100%;
+  background:rgba(255,255,255,0.5);
+  border:1px solid var(--paper-darker);
+  border-radius:6px;
+  padding:10px 12px;
+  font-family:'Lora',serif;
+  font-size:0.88rem;
+  color:var(--ink);
+  resize:none;
+  line-height:1.6;
+  transition:border 0.2s;
+  -webkit-appearance:none;
+}
+.panel-textarea:focus{
+  outline:none;
+  border-color:var(--gold);
+  background:rgba(255,255,255,0.8);
+}
+.field-group{margin-bottom:16px}
+
+/* Pin / Emoji picker */
+.pin-row{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-top:4px;
+}
+.pin-btn{
+  background:var(--paper-dark);
+  border:1.5px solid var(--paper-darker);
+  border-radius:8px;
+  width:40px;height:40px;
+  font-size:1.2rem;
+  cursor:pointer;
+  transition:all 0.15s;
+  display:flex;align-items:center;justify-content:center;
+}
+.pin-btn:hover{border-color:var(--gold);transform:scale(1.1)}
+.pin-btn.selected{border-color:var(--gold);background:rgba(184,137,63,0.15);transform:scale(1.1)}
+
+/* Media fields */
+.media-row{display:flex;gap:10px;margin-top:4px}
+.media-btn{
+  flex:1;
+  background:var(--paper-dark);
+  border:1.5px dashed var(--paper-darker);
+  border-radius:8px;
+  padding:12px 8px;
+  cursor:pointer;
+  text-align:center;
+  font-family:'Lora',serif;
+  color:var(--smoke);
+  font-size:0.72rem;
+  line-height:1.4;
+  transition:all 0.2s;
+}
+.media-btn:hover{border-color:var(--gold);color:var(--ink)}
+.media-btn.has-media{border-style:solid;border-color:var(--gold);color:var(--ink);background:rgba(184,137,63,0.1)}
+.media-btn svg{display:block;margin:0 auto 4px;width:20px;height:20px;opacity:0.6}
+.media-btn.has-media svg{opacity:1}
+#photo-input{display:none}
+#voice-player{margin-top:8px;width:100%;display:none}
+#voice-player.show{display:block}
+
+/* Save button */
+#save-btn{
+  display:block;
+  width:100%;
+  margin-top:20px;
+  padding:13px;
+  background:var(--ink);
+  color:var(--gold);
+  font-family:'Cinzel',serif;
+  font-size:0.8rem;
+  letter-spacing:0.2em;
+  text-transform:uppercase;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
+  transition:all 0.2s;
+}
+#save-btn:hover{background:var(--ink-light)}
+#save-btn:active{transform:scale(0.98)}
+#save-status{
+  text-align:center;
+  font-family:'Lora',serif;
+  font-style:italic;
+  color:var(--smoke);
+  font-size:0.7rem;
+  margin-top:8px;
+  min-height:16px;
+}
+
+/* ===== STREAM VIEW ===== */
+#view-stream .parchment{
+  min-height:100%;
+  padding:16px;
+}
+.stream-title{
+  font-family:'Cinzel',serif;
+  color:var(--ink);
+  font-size:1rem;
+  letter-spacing:0.15em;
+  text-align:center;
+  margin-bottom:16px;
+  padding-bottom:12px;
+  border-bottom:1px solid var(--paper-darker);
+}
+.stream-entry{
+  margin-bottom:16px;
+  padding:14px 16px;
+  background:rgba(255,255,255,0.4);
+  border-left:3px solid var(--gold);
+  border-radius:0 8px 8px 0;
+  cursor:pointer;
+  transition:all 0.2s;
+}
+.stream-entry:hover{background:rgba(255,255,255,0.7);transform:translateX(3px)}
+.stream-entry-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:6px;
+}
+.stream-entry-day{
+  font-family:'Cinzel',serif;
+  color:var(--burgundy);
+  font-size:0.75rem;
+  font-weight:600;
+}
+.stream-entry-pin{font-size:1rem}
+.stream-entry-theme{
+  font-family:'Lora',serif;
+  font-style:italic;
+  color:var(--smoke);
+  font-size:0.7rem;
+  margin-bottom:6px;
+}
+.stream-entry-text{
+  font-family:'Lora',serif;
+  color:var(--ink);
+  font-size:0.82rem;
+  line-height:1.6;
+}
+.stream-empty{
+  text-align:center;
+  font-family:'Lora',serif;
+  font-style:italic;
+  color:var(--smoke);
+  padding:40px 20px;
+  font-size:0.85rem;
+}
+
+/* ===== REEL VIEW ===== */
+#view-reel{
+  background:var(--ink);
+  display:flex;
+  flex-direction:column;
+}
+.reel-inner{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+}
+.reel-card{
+  width:100%;
+  max-width:500px;
+  background:var(--paper);
+  border-radius:12px;
+  padding:28px 24px;
+  text-align:center;
+  box-shadow:0 8px 32px rgba(0,0,0,0.5);
+  background-image:radial-gradient(ellipse at 30% 20%,rgba(184,137,63,0.1) 0%,transparent 60%);
+  min-height:320px;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+}
+.reel-card-top{}
+.reel-day-num{
+  font-family:'Cinzel',serif;
+  font-size:3rem;
+  font-weight:700;
+  color:var(--ink);
+  line-height:1;
+}
+.reel-day-theme{
+  font-family:'Cinzel',serif;
+  color:var(--burgundy);
+  font-size:0.85rem;
+  letter-spacing:0.1em;
+  margin:8px 0;
+}
+.reel-pin{
+  font-size:2rem;
+  margin:12px 0;
+}
+.reel-text{
+  font-family:'Cormorant Garamond',serif;
+  font-style:italic;
+  color:var(--ink);
+  font-size:1.05rem;
+  line-height:1.7;
+  margin:12px 0;
+}
+.reel-horizon{
+  font-family:'Lora',serif;
+  color:var(--smoke);
+  font-size:0.8rem;
+  font-style:italic;
+  border-top:1px solid var(--paper-darker);
+  padding-top:10px;
+  margin-top:10px;
+}
+.reel-empty-card{
+  color:var(--smoke);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-family:'Lora',serif;
+  font-style:italic;
+  font-size:0.85rem;
+}
+.reel-nav{
+  display:flex;
+  gap:12px;
+  margin-top:20px;
+  align-items:center;
+  justify-content:center;
+}
+.reel-nav-btn{
+  background:rgba(255,255,255,0.1);
+  border:1px solid rgba(184,137,63,0.4);
+  color:var(--gold);
+  border-radius:8px;
+  padding:10px 20px;
+  font-family:'Cinzel',serif;
+  font-size:0.7rem;
+  letter-spacing:0.1em;
+  cursor:pointer;
+  transition:all 0.2s;
+}
+.reel-nav-btn:hover{background:rgba(255,255,255,0.2)}
+.reel-nav-btn:disabled{opacity:0.3;cursor:default}
+.reel-counter{
+  color:rgba(184,137,63,0.7);
+  font-family:'Lora',serif;
+  font-size:0.75rem;
+}
+
+/* ===== ATLAS VIEW ===== */
+#view-atlas .parchment{
+  min-height:100%;
+  padding:20px;
+}
+.atlas-title{
+  font-family:'Cinzel',serif;
+  font-size:1.3rem;
+  color:var(--ink);
+  text-align:center;
+  letter-spacing:0.15em;
+  margin-bottom:4px;
+}
+.atlas-student{
+  text-align:center;
+  font-family:'IM Fell English SC',serif;
+  color:var(--burgundy);
+  font-size:0.9rem;
+  margin-bottom:4px;
+}
+.atlas-values{
+  text-align:center;
+  font-family:'Lora',serif;
+  font-style:italic;
+  color:var(--smoke);
+  font-size:0.75rem;
+  margin-bottom:20px;
+}
+.atlas-week{
+  margin-bottom:20px;
+}
+.atlas-week-title{
+  font-family:'Cinzel',serif;
+  color:var(--ink);
+  font-size:0.75rem;
+  letter-spacing:0.2em;
+  text-transform:uppercase;
+  border-bottom:1px solid var(--paper-darker);
+  padding-bottom:4px;
+  margin-bottom:10px;
+}
+.atlas-entry{
+  margin-bottom:12px;
+  padding:10px 12px;
+  background:rgba(255,255,255,0.35);
+  border-radius:6px;
+}
+.atlas-entry-head{
+  display:flex;
+  gap:8px;
+  align-items:center;
+  margin-bottom:4px;
+}
+.atlas-entry-day{
+  font-family:'Cinzel',serif;
+  color:var(--burgundy);
+  font-size:0.7rem;
+  font-weight:600;
+  white-space:nowrap;
+}
+.atlas-entry-theme{
+  font-family:'Lora',serif;
+  font-style:italic;
+  color:var(--smoke);
+  font-size:0.7rem;
+}
+.atlas-entry-pin{font-size:0.9rem}
+.atlas-entry-moment{
+  font-family:'Lora',serif;
+  color:var(--ink);
+  font-size:0.8rem;
+  line-height:1.5;
+  margin-bottom:3px;
+}
+.atlas-entry-horizon{
+  font-family:'Lora',serif;
+  font-style:italic;
+  color:var(--smoke);
+  font-size:0.73rem;
+}
+.atlas-print-btn{
+  display:block;
+  width:100%;
+  max-width:300px;
+  margin:20px auto 0;
+  padding:11px;
+  background:var(--ink);
+  color:var(--gold);
+  font-family:'Cinzel',serif;
+  font-size:0.7rem;
+  letter-spacing:0.2em;
+  text-transform:uppercase;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
+}
+
+/* ===== ONBOARDING MODAL ===== */
+#onboarding{
+  position:fixed;
+  inset:0;
+  background:rgba(26,39,66,0.92);
+  z-index:200;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+  backdrop-filter:blur(4px);
+}
+#onboarding.hidden{display:none}
+.ob-card{
+  background:var(--paper);
+  border-radius:12px;
+  padding:32px 28px;
+  max-width:420px;
+  width:100%;
+  text-align:center;
+  background-image:radial-gradient(ellipse at 30% 20%,rgba(184,137,63,0.12) 0%,transparent 60%);
+  box-shadow:0 16px 48px rgba(0,0,0,0.5);
+}
+.ob-compass{
+  margin:0 auto 20px;
+  display:block;
+}
+.ob-title{
+  font-family:'Cinzel',serif;
+  color:var(--ink);
+  font-size:1.4rem;
+  font-weight:700;
+  letter-spacing:0.1em;
+  margin-bottom:4px;
+}
+.ob-subtitle{
+  font-family:'Lora',serif;
+  font-style:italic;
+  color:var(--smoke);
+  font-size:0.82rem;
+  margin-bottom:24px;
+}
+.ob-field{
+  margin-bottom:16px;
+  text-align:left;
+}
+.ob-label{
+  font-family:'Cinzel',serif;
+  color:var(--ink);
+  font-size:0.62rem;
+  letter-spacing:0.18em;
+  text-transform:uppercase;
+  margin-bottom:6px;
+  display:block;
+}
+.ob-input{
+  width:100%;
+  padding:11px 14px;
+  background:rgba(255,255,255,0.6);
+  border:1.5px solid var(--paper-darker);
+  border-radius:8px;
+  font-family:'Lora',serif;
+  font-size:0.9rem;
+  color:var(--ink);
+  -webkit-appearance:none;
+}
+.ob-input:focus{outline:none;border-color:var(--gold)}
+.ob-btn{
+  width:100%;
+  margin-top:8px;
+  padding:13px;
+  background:var(--ink);
+  color:var(--gold);
+  font-family:'Cinzel',serif;
+  font-size:0.8rem;
+  letter-spacing:0.2em;
+  text-transform:uppercase;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
+  transition:all 0.2s;
+}
+.ob-btn:hover{background:var(--ink-light)}
+.ob-note{
+  margin-top:14px;
+  font-family:'Lora',serif;
+  font-style:italic;
+  color:var(--smoke);
+  font-size:0.68rem;
+  line-height:1.5;
+}
+
+/* ===== VOICE RECORDER ===== */
+.rec-indicator{
+  display:inline-block;
+  width:8px;height:8px;
+  border-radius:50%;
+  background:var(--burgundy);
+  margin-right:5px;
+  animation:pulse 0.8s infinite;
+}
+
+/* ===== SETUP BANNER ===== */
+#setup-banner{
+  background:rgba(122,59,59,0.15);
+  border-bottom:1px solid rgba(122,59,59,0.3);
+  padding:6px 14px;
+  font-family:'Lora',serif;
+  font-style:italic;
+  color:var(--burgundy);
+  font-size:0.7rem;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  flex-shrink:0;
+  cursor:pointer;
+}
+#setup-banner.hidden{display:none}
+
+/* ===== PHOTO PREVIEW ===== */
+.photo-preview{
+  width:100%;
+  max-height:160px;
+  object-fit:cover;
+  border-radius:6px;
+  margin-top:8px;
+  display:none;
+}
+.photo-preview.show{display:block}
+
+/* ===== SCROLLBAR ===== */
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--paper-darker);border-radius:2px}
+
+/* ===== PRINT ===== */
+@media print{
+  #hdr,#nav,#prog-bar,#setup-banner{display:none!important}
+  #view-atlas{position:static;overflow:visible;display:block!important}
+  .view{position:static!important}
+  body{background:white}
+  #day-panel{display:none}
+}
+
+@media(max-width:400px){
+  .ob-card{padding:24px 18px}
+  #panel-body{padding:12px 14px 20px}
+  .week-days{grid-template-columns:repeat(5,1fr);gap:4px}
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- SETUP BANNER -->
+  <div id="setup-banner" onclick="showSetupInfo()">
+    <span>⚠️ Sheets sync not configured — tap to learn how</span>
+    <span style="opacity:0.6">×</span>
+  </div>
+
+  <!-- HEADER -->
+  <div id="hdr">
+    <div id="hdr-title">
+      Distance Traveled
+      <span>TOL Summer 2026</span>
+    </div>
+    <div id="hdr-student" onclick="editProfile()">
+      <span id="hdr-name">Loading…</span>
+      <small id="hdr-values"></small>
+      <span id="sync-badge" title="Sync status"></span>
+    </div>
+  </div>
+
+  <!-- PROGRESS -->
+  <div id="prog-bar"><div id="prog-fill"></div></div>
+
+  <!-- NAV -->
+  <nav id="nav">
+    <button class="nav-btn active" onclick="showView('map')" id="nav-map">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
+      Map
+    </button>
+    <button class="nav-btn" onclick="showView('stream')" id="nav-stream">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6h16M4 10h16M4 14h10"/></svg>
+      Stream
+    </button>
+    <button class="nav-btn" onclick="showView('reel')" id="nav-reel">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M10 9l5 3-5 3V9z"/></svg>
+      Reel
+    </button>
+    <button class="nav-btn" onclick="showView('atlas')" id="nav-atlas">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+      Atlas
+    </button>
+  </nav>
+
+  <!-- VIEWS -->
+  <div id="views">
+
+    <!-- MAP -->
+    <div class="view active" id="view-map">
+      <div class="map-inner parchment">
+        <div class="map-title">THE ATLAS OF DISTANCE TRAVELED</div>
+        <div class="map-sub">Forty days. One journey. Your story.</div>
+        <div class="compass-container">
+          <svg class="compass-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="100" cy="100" r="95" fill="#f1e7d2" stroke="#b8893f" stroke-width="1.5"/>
+            <circle cx="100" cy="100" r="85" fill="none" stroke="rgba(184,137,63,0.3)" stroke-width="0.5" stroke-dasharray="4,4"/>
+            <circle cx="100" cy="100" r="70" fill="none" stroke="rgba(184,137,63,0.2)" stroke-width="0.5"/>
+            <!-- N -->
+            <polygon points="100,14 93,100 100,88 107,100" fill="#7a3b3b"/>
+            <!-- S -->
+            <polygon points="100,186 93,100 100,112 107,100" fill="#1a2742"/>
+            <!-- E -->
+            <polygon points="186,100 100,93 112,100 100,107" fill="#1a2742"/>
+            <!-- W -->
+            <polygon points="14,100 100,93 88,100 100,107" fill="#1a2742"/>
+            <!-- Ordinals -->
+            <polygon points="157,43 100,93 107,100 143,57" fill="rgba(184,137,63,0.5)"/>
+            <polygon points="157,157 100,107 107,100 143,143" fill="rgba(184,137,63,0.5)"/>
+            <polygon points="43,157 100,107 93,100 57,143" fill="rgba(184,137,63,0.5)"/>
+            <polygon points="43,43 100,93 93,100 57,57" fill="rgba(184,137,63,0.5)"/>
+            <circle cx="100" cy="100" r="6" fill="#b8893f" stroke="#f1e7d2" stroke-width="2"/>
+            <!-- Cardinal labels -->
+            <text x="100" y="12" text-anchor="middle" font-family="Cinzel,serif" font-size="11" fill="#7a3b3b" font-weight="bold">N</text>
+            <text x="100" y="196" text-anchor="middle" font-family="Cinzel,serif" font-size="10" fill="#1a2742">S</text>
+            <text x="194" y="104" text-anchor="middle" font-family="Cinzel,serif" font-size="10" fill="#1a2742">E</text>
+            <text x="8" y="104" text-anchor="middle" font-family="Cinzel,serif" font-size="10" fill="#1a2742">W</text>
+          </svg>
+        </div>
+        <div id="weeks-container"></div>
+      </div>
+    </div>
+
+    <!-- STREAM -->
+    <div class="view" id="view-stream">
+      <div class="parchment" style="min-height:100%;padding:16px">
+        <div class="stream-title">Journey Log</div>
+        <div id="stream-entries"></div>
+      </div>
+    </div>
+
+    <!-- REEL -->
+    <div class="view" id="view-reel">
+      <div class="reel-inner">
+        <div id="reel-card" class="reel-card"></div>
+        <div class="reel-nav">
+          <button class="reel-nav-btn" id="reel-prev" onclick="reelNav(-1)">← Prev</button>
+          <span class="reel-counter" id="reel-counter"></span>
+          <button class="reel-nav-btn" id="reel-next" onclick="reelNav(1)">Next →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ATLAS -->
+    <div class="view" id="view-atlas">
+      <div class="parchment" style="min-height:100%;padding:20px">
+        <div class="atlas-title">Distance Traveled</div>
+        <div class="atlas-student" id="atlas-name"></div>
+        <div class="atlas-values" id="atlas-values"></div>
+        <div id="atlas-content"></div>
+        <button class="atlas-print-btn" onclick="window.print()">Print / Save as PDF</button>
+      </div>
+    </div>
+
+  </div><!-- /views -->
+</div><!-- /app -->
+
+<!-- DAY PANEL -->
+<div id="day-panel">
+  <div id="panel-handle" onclick="closePanel()"></div>
+  <div id="panel-header">
+    <div>
+      <div id="panel-day-num"></div>
+    </div>
+    <div id="panel-day-info">
+      <div id="panel-day-theme"></div>
+      <div id="panel-day-sub"></div>
+    </div>
+    <button id="panel-close" onclick="closePanel()">&times;</button>
+  </div>
+  <div id="panel-body">
+    <div class="field-group">
+      <div class="field-label">
+        Real Moment
+        <span class="char-count"><span id="rm-count">0</span>/280</span>
+      </div>
+      <div class="field-prompt">What actually happened today? One honest scene.</div>
+      <textarea class="panel-textarea" id="field-realMoment" rows="4" maxlength="280" placeholder="Write the moment as it happened…" oninput="updateCount('rm-count','field-realMoment')"></textarea>
+    </div>
+    <div class="field-group">
+      <div class="field-label">
+        Horizon
+        <span class="char-count"><span id="hz-count">0</span>/200</span>
+      </div>
+      <div class="field-prompt">What are you moving toward? One sentence.</div>
+      <textarea class="panel-textarea" id="field-horizon" rows="3" maxlength="200" placeholder="I am becoming…" oninput="updateCount('hz-count','field-horizon')"></textarea>
+    </div>
+    <div class="field-group">
+      <div class="field-label">Pin</div>
+      <div class="field-prompt">Mark this day with an emblem.</div>
+      <div class="pin-row" id="pin-row"></div>
+    </div>
+    <div class="field-group">
+      <div class="field-label">Media</div>
+      <div class="media-row">
+        <label class="media-btn" id="photo-btn" for="photo-input">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="7" width="18" height="13" rx="2"/><circle cx="12" cy="13" r="3"/><path d="M9 7l1.5-3h3L15 7"/></svg>
+          Photo
+        </label>
+        <input type="file" id="photo-input" accept="image/*" capture="environment" onchange="handlePhoto(this)">
+        <button class="media-btn" id="voice-btn" onclick="toggleVoice()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2a3 3 0 013 3v7a3 3 0 01-6 0V5a3 3 0 013-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2M12 19v3M8 22h8"/></svg>
+          Voice Memo
+        </button>
+      </div>
+      <img id="photo-preview" class="photo-preview">
+      <audio id="voice-player" class="voice-player" controls></audio>
+    </div>
+    <button id="save-btn" onclick="saveEntry()">Mark This Day</button>
+    <div id="save-status"></div>
+  </div>
+</div>
+
+<!-- ONBOARDING -->
+<div id="onboarding">
+  <div class="ob-card">
+    <svg class="ob-compass" width="80" height="80" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="100" cy="100" r="95" fill="#f1e7d2" stroke="#b8893f" stroke-width="2"/>
+      <polygon points="100,14 93,100 100,88 107,100" fill="#7a3b3b"/>
+      <polygon points="100,186 93,100 100,112 107,100" fill="#1a2742"/>
+      <polygon points="186,100 100,93 112,100 100,107" fill="#1a2742"/>
+      <polygon points="14,100 100,93 88,100 100,107" fill="#1a2742"/>
+      <circle cx="100" cy="100" r="6" fill="#b8893f" stroke="#f1e7d2" stroke-width="2"/>
+      <text x="100" y="12" text-anchor="middle" font-family="Cinzel,serif" font-size="11" fill="#7a3b3b" font-weight="bold">N</text>
+    </svg>
+    <div class="ob-title">Distance Traveled</div>
+    <div class="ob-subtitle">TOL Summer 2026 — University of Pittsburgh<br>Your 40-day leadership atlas</div>
+    <div class="ob-field">
+      <label class="ob-label" for="ob-name">Your Full Name</label>
+      <input class="ob-input" id="ob-name" type="text" placeholder="First Last" autocomplete="name">
+    </div>
+    <div class="ob-field">
+      <label class="ob-label" for="ob-val1">Core Value #1</label>
+      <input class="ob-input" id="ob-val1" type="text" placeholder="e.g. Courage" autocomplete="off">
+    </div>
+    <div class="ob-field">
+      <label class="ob-label" for="ob-val2">Core Value #2</label>
+      <input class="ob-input" id="ob-val2" type="text" placeholder="e.g. Integrity" autocomplete="off">
+    </div>
+    <button class="ob-btn" onclick="finishOnboarding()">Begin the Journey</button>
+    <div class="ob-note">Your entries save to this device and sync to Google Sheets when online. Nothing leaves your device without your save.</div>
+  </div>
+</div>
+
+<script>
+// ===== CONFIGURATION =====
+// Paste your Google Apps Script deployment URL here after setup:
+var SHEETS_URL = '';
+// Example: 'https://script.google.com/macros/s/AKfycb.../exec'
+
+// ===== CURRICULUM DATA =====
+var DAYS = [
+  // Week 1: Arrival & Foundation
+  {day:1, week:1, theme:'Arrival', sub:'The journey begins. Who are you now?'},
+  {day:2, week:1, theme:'Roots', sub:'Where do you come from? What shaped you?'},
+  {day:3, week:1, theme:'Presence', sub:'Show up fully. Be here.'},
+  {day:4, week:1, theme:'Listening', sub:'Hear what is beneath the words.'},
+  {day:5, week:1, theme:'Courage', sub:'What requires bravery from you today?'},
+  {day:6, week:1, theme:'First Look', sub:'What have you already discovered?'},
+  // Week 2: Identity & Values
+  {day:7, week:2, theme:'Values', sub:'What do you stand for when no one is watching?'},
+  {day:8, week:2, theme:'Identity', sub:'Who are you beneath the roles you play?'},
+  {day:9, week:2, theme:'Story', sub:'What narrative do you carry about yourself?'},
+  {day:10, week:2, theme:'Shadow', sub:'What parts of yourself do you avoid?'},
+  {day:11, week:2, theme:'Strengths', sub:'What gifts are undeniable in you?'},
+  {day:12, week:2, theme:'Vulnerability', sub:'Where is your growing edge?'},
+  {day:13, week:2, theme:'Reflection', sub:'What is changing inside you?'},
+  // Week 3: Leadership Theory & Practice
+  {day:14, week:3, theme:'Vision', sub:'What future are you called to help create?'},
+  {day:15, week:3, theme:'Voice', sub:'How do you speak truth that matters?'},
+  {day:16, week:3, theme:'Service', sub:'Leadership is service. What does that mean to you?'},
+  {day:17, week:3, theme:'Power', sub:'How do you use influence ethically?'},
+  {day:18, week:3, theme:'Empathy', sub:'Step into another’s story.'},
+  {day:19, week:3, theme:'Integrity', sub:'When does your walk match your talk?'},
+  {day:20, week:3, theme:'Halfway', sub:'You are at the center of the journey. Look both ways.'},
+  // Week 4: Teams, Conflict & Crucibles
+  {day:21, week:4, theme:'Community', sub:'What do you owe the people around you?'},
+  {day:22, week:4, theme:'Conflict', sub:'Where does tension become growth?'},
+  {day:23, week:4, theme:'Trust', sub:'How is trust built? How is it broken?'},
+  {day:24, week:4, theme:'Crucible', sub:'What pressure has forged your character?'},
+  {day:25, week:4, theme:'Accountability', sub:'Hold yourself and others with care.'},
+  {day:26, week:4, theme:'Failure', sub:'Tell the story of a fall. What did it teach?'},
+  {day:27, week:4, theme:'Resilience', sub:'How do you get back up?'},
+  // Week 5: Justice & Collective Action
+  {day:28, week:5, theme:'Justice', sub:'Where do you see the world as it should not be?'},
+  {day:29, week:5, theme:'Equity', sub:'What does fairness require of a leader?'},
+  {day:30, week:5, theme:'Systems', sub:'What structures shape the lives around you?'},
+  {day:31, week:5, theme:'Action', sub:'What is one thing you can do, starting now?'},
+  {day:32, week:5, theme:'Coalition', sub:'Who are your co-conspirators for good?'},
+  {day:33, week:5, theme:'Gratitude', sub:'Who made your journey possible?'},
+  {day:34, week:5, theme:'Legacy', sub:'What will remain after you leave a room?'},
+  // Week 6: Integration & Launch
+  {day:35, week:6, theme:'Return', sub:'You will go back. What do you bring?'},
+  {day:36, week:6, theme:'Commitment', sub:'What promise will you keep to yourself?'},
+  {day:37, week:6, theme:'Letter', sub:'Write to your future self, one year from now.'},
+  {day:38, week:6, theme:'Witness', sub:'Acknowledge the distance you have traveled.'},
+  {day:39, week:6, theme:'Release', sub:'What do you leave behind?'},
+  {day:40, week:6, theme:'Launch', sub:'The journey continues. Who are you now?'},
+];
+
+var WEEK_TITLES = {
+  1: 'Week One — Arrival & Foundation',
+  2: 'Week Two — Identity & Values',
+  3: 'Week Three — Leadership in Practice',
+  4: 'Week Four — Teams, Conflict & Crucibles',
+  5: 'Week Five — Justice & Collective Action',
+  6: 'Week Six — Integration & Launch'
+};
+
+var PINS = ['🔥','⭐','🌊','⚡','🌱','🔑','❤️','🔮','✊','🎯','💪','🦸','🌟','✨','🍎','🕯️'];
+
+// ===== STATE =====
+var state = {
+  student: { name: '', value1: '', value2: '' },
+  entries: {}, // keyed by day number
+  currentView: 'map',
+  currentDay: null,
+  reelIndex: 0,
+  recording: false,
+  mediaRecorder: null,
+  audioChunks: [],
+  voiceBlob: null,
+  photoDataUrl: null
+};
+
+// ===== INIT =====
+function init() {
+  loadFromStorage();
+  if (!state.student.name) {
+    document.getElementById('onboarding').classList.remove('hidden');
+  } else {
+    document.getElementById('onboarding').classList.add('hidden');
+    renderAll();
+  }
+  checkSheetsConfig();
+}
+
+function loadFromStorage() {
+  try {
+    var s = localStorage.getItem('dt_student');
+    if (s) state.student = JSON.parse(s);
+    var e = localStorage.getItem('dt_entries');
+    if (e) state.entries = JSON.parse(e);
+  } catch(err) {}
+}
+
+function saveToStorage() {
+  try {
+    localStorage.setItem('dt_student', JSON.stringify(state.student));
+    localStorage.setItem('dt_entries', JSON.stringify(state.entries));
+  } catch(err) {}
+}
+
+function checkSheetsConfig() {
+  var banner = document.getElementById('setup-banner');
+  if (SHEETS_URL && SHEETS_URL.indexOf('script.google.com') !== -1) {
+    banner.classList.add('hidden');
+  }
+}
+
+// ===== ONBOARDING =====
+function finishOnboarding() {
+  var name = document.getElementById('ob-name').value.trim();
+  var v1 = document.getElementById('ob-val1').value.trim();
+  var v2 = document.getElementById('ob-val2').value.trim();
+  if (!name) { document.getElementById('ob-name').focus(); return; }
+  if (!v1) { document.getElementById('ob-val1').focus(); return; }
+  if (!v2) { document.getElementById('ob-val2').focus(); return; }
+  state.student = { name: name, value1: v1, value2: v2 };
+  saveToStorage();
+  document.getElementById('onboarding').classList.add('hidden');
+  renderAll();
+}
+
+function editProfile() {
+  var n = prompt('Your name:', state.student.name);
+  if (n === null) return;
+  if (n.trim()) state.student.name = n.trim();
+  var v1 = prompt('Core Value #1:', state.student.value1);
+  if (v1 !== null && v1.trim()) state.student.value1 = v1.trim();
+  var v2 = prompt('Core Value #2:', state.student.value2);
+  if (v2 !== null && v2.trim()) state.student.value2 = v2.trim();
+  saveToStorage();
+  renderAll();
+}
+
+// ===== RENDER ALL =====
+function renderAll() {
+  updateHeader();
+  updateProgress();
+  renderMap();
+  renderStream();
+  renderReel();
+  renderAtlas();
+}
+
+function updateHeader() {
+  document.getElementById('hdr-name').textContent = state.student.name || 'Traveler';
+  var vals = [state.student.value1, state.student.value2].filter(Boolean).join(' · ');
+  document.getElementById('hdr-values').textContent = vals;
+}
+
+function updateProgress() {
+  var filled = Object.values(state.entries).filter(function(e) {
+    return e && (e.realMoment || e.horizon || e.pin);
+  }).length;
+  var pct = Math.round((filled / 40) * 100);
+  document.getElementById('prog-fill').style.width = pct + '%';
+}
+
+// ===== MAP VIEW =====
+function renderMap() {
+  var weeks = {};
+  DAYS.forEach(function(d) {
+    if (!weeks[d.week]) weeks[d.week] = [];
+    weeks[d.week].push(d);
+  });
+  var html = '';
+  Object.keys(weeks).forEach(function(w) {
+    html += '<div class="week-block">';
+    html += '<div class="week-label">' + WEEK_TITLES[w] + '</div>';
+    html += '<div class="week-days">';
+    weeks[w].forEach(function(d) {
+      var entry = state.entries[d.day];
+      var filled = entry && (entry.realMoment || entry.horizon || entry.pin);
+      var cls = 'day-node' + (filled ? ' filled' : '');
+      html += '<div class="' + cls + '" onclick="openDay(' + d.day + ')">';
+      html += '<div class="day-num">' + d.day + '</div>';
+      html += '<div class="day-theme">' + d.theme + '</div>';
+      if (filled && entry.pin) html += '<div style="font-size:0.8rem">' + entry.pin + '</div>';
+      html += '</div>';
+    });
+    html += '</div></div>';
+  });
+  document.getElementById('weeks-container').innerHTML = html;
+}
+
+// ===== DAY PANEL =====
+function openDay(dayNum) {
+  var d = DAYS.find(function(x){ return x.day === dayNum; });
+  if (!d) return;
+  state.currentDay = dayNum;
+  state.photoDataUrl = null;
+  state.voiceBlob = null;
+
+  document.getElementById('panel-day-num').textContent = 'Day ' + dayNum;
+  document.getElementById('panel-day-theme').textContent = d.theme;
+  document.getElementById('panel-day-sub').textContent = d.sub;
+
+  var entry = state.entries[dayNum] || {};
+  document.getElementById('field-realMoment').value = entry.realMoment || '';
+  document.getElementById('field-horizon').value = entry.horizon || '';
+  updateCount('rm-count', 'field-realMoment');
+  updateCount('hz-count', 'field-horizon');
+
+  // Pins
+  var pinHtml = PINS.map(function(p) {
+    var sel = entry.pin === p ? ' selected' : '';
+    return '<button class="pin-btn' + sel + '" onclick="selectPin(this,\'' + p + '\')">' + p + '</button>';
+  }).join('');
+  document.getElementById('pin-row').innerHTML = pinHtml;
+
+  // Photo
+  var photoPreview = document.getElementById('photo-preview');
+  var photBtn = document.getElementById('photo-btn');
+  if (entry.photo) {
+    photoPreview.src = entry.photo;
+    photoPreview.classList.add('show');
+    photBtn.classList.add('has-media');
+    photBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="7" width="18" height="13" rx="2"/><circle cx="12" cy="13" r="3"/><path d="M9 7l1.5-3h3L15 7"/></svg>Photo ✓';
+    state.photoDataUrl = entry.photo;
+  } else {
+    photoPreview.src = '';
+    photoPreview.classList.remove('show');
+    photBtn.classList.remove('has-media');
+    photBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="7" width="18" height="13" rx="2"/><circle cx="12" cy="13" r="3"/><path d="M9 7l1.5-3h3L15 7"/></svg>Photo';
+  }
+
+  // Voice
+  var vp = document.getElementById('voice-player');
+  var vBtn = document.getElementById('voice-btn');
+  if (entry.voice) {
+    vp.src = entry.voice;
+    vp.classList.add('show');
+    vBtn.classList.add('has-media');
+    vBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2a3 3 0 013 3v7a3 3 0 01-6 0V5a3 3 0 013-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2M12 19v3M8 22h8"/></svg>Voice ✓';
+  } else {
+    vp.src = '';
+    vp.classList.remove('show');
+    vBtn.classList.remove('has-media');
+    vBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2a3 3 0 013 3v7a3 3 0 01-6 0V5a3 3 0 013-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2M12 19v3M8 22h8"/></svg>Voice Memo';
+  }
+
+  document.getElementById('save-status').textContent = '';
+  document.getElementById('day-panel').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closePanel() {
+  document.getElementById('day-panel').classList.remove('open');
+  document.body.style.overflow = '';
+  if (state.recording) stopRecording();
+}
+
+function updateCount(countId, fieldId) {
+  var val = document.getElementById(fieldId).value.length;
+  document.getElementById(countId).textContent = val;
+}
+
+function selectPin(btn, pin) {
+  document.querySelectorAll('.pin-btn').forEach(function(b){ b.classList.remove('selected'); });
+  btn.classList.add('selected');
+}
+
+// ===== PHOTO =====
+function handlePhoto(input) {
+  var file = input.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    state.photoDataUrl = e.target.result;
+    var preview = document.getElementById('photo-preview');
+    preview.src = state.photoDataUrl;
+    preview.classList.add('show');
+    var btn = document.getElementById('photo-btn');
+    btn.classList.add('has-media');
+    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="7" width="18" height="13" rx="2"/><circle cx="12" cy="13" r="3"/><path d="M9 7l1.5-3h3L15 7"/></svg>Photo ✓';
+  };
+  reader.readAsDataURL(file);
+}
+
+// ===== VOICE =====
+function toggleVoice() {
+  if (state.recording) {
+    stopRecording();
+  } else {
+    startRecording();
+  }
+}
+
+function startRecording() {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    alert('Voice recording is not supported on this browser.');
+    return;
+  }
+  navigator.mediaDevices.getUserMedia({ audio: true }).then(function(stream) {
+    state.audioChunks = [];
+    state.mediaRecorder = new MediaRecorder(stream);
+    state.mediaRecorder.ondataavailable = function(e) {
+      if (e.data.size > 0) state.audioChunks.push(e.data);
+    };
+    state.mediaRecorder.onstop = function() {
+      state.voiceBlob = new Blob(state.audioChunks, { type: 'audio/webm' });
+      var url = URL.createObjectURL(state.voiceBlob);
+      var vp = document.getElementById('voice-player');
+      vp.src = url;
+      vp.classList.add('show');
+      var btn = document.getElementById('voice-btn');
+      btn.classList.remove('has-media');
+      btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2a3 3 0 013 3v7a3 3 0 01-6 0V5a3 3 0 013-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2M12 19v3M8 22h8"/></svg>Voice ✓';
+      btn.classList.add('has-media');
+      stream.getTracks().forEach(function(t){ t.stop(); });
+    };
+    state.mediaRecorder.start();
+    state.recording = true;
+    var btn = document.getElementById('voice-btn');
+    btn.innerHTML = '<span class="rec-indicator"></span>Stop Recording';
+    btn.style.borderColor = 'var(--burgundy)';
+  }).catch(function() {
+    alert('Microphone access denied. Enable it in browser settings.');
+  });
+}
+
+function stopRecording() {
+  if (state.mediaRecorder && state.recording) {
+    state.mediaRecorder.stop();
+    state.recording = false;
+    var btn = document.getElementById('voice-btn');
+    btn.style.borderColor = '';
+  }
+}
+
+// ===== SAVE ENTRY =====
+function saveEntry() {
+  var dayNum = state.currentDay;
+  if (!dayNum) return;
+  var d = DAYS.find(function(x){ return x.day === dayNum; });
+
+  var selectedPin = '';
+  var selPinBtn = document.querySelector('.pin-btn.selected');
+  if (selPinBtn) selectedPin = selPinBtn.textContent.trim();
+
+  var entry = {
+    day: dayNum,
+    theme: d ? d.theme : '',
+    realMoment: document.getElementById('field-realMoment').value,
+    horizon: document.getElementById('field-horizon').value,
+    pin: selectedPin,
+    photo: state.photoDataUrl || (state.entries[dayNum] && state.entries[dayNum].photo) || null,
+    hasVoice: !!(state.voiceBlob || (state.entries[dayNum] && state.entries[dayNum].hasVoice)),
+    timestamp: Date.now()
+  };
+
+  // Store voice as base64 if available
+  if (state.voiceBlob) {
+    var reader = new FileReader();
+    reader.onload = function(ev) {
+      entry.voice = ev.target.result;
+      entry.hasVoice = true;
+      finalizeSave(dayNum, entry);
+    };
+    reader.readAsDataURL(state.voiceBlob);
+  } else {
+    if (state.entries[dayNum] && state.entries[dayNum].voice) {
+      entry.voice = state.entries[dayNum].voice;
+    }
+    finalizeSave(dayNum, entry);
+  }
+}
+
+function finalizeSave(dayNum, entry) {
+  state.entries[dayNum] = entry;
+  saveToStorage();
+  renderAll();
+
+  document.getElementById('save-status').textContent = 'Saved to device ✓';
+  setSyncBadge('syncing');
+
+  // Sync to Google Sheets
+  if (SHEETS_URL && SHEETS_URL.indexOf('script.google.com') !== -1) {
+    syncEntry(entry);
+  } else {
+    setSyncBadge('error');
+  }
+
+  setTimeout(function() { closePanel(); }, 800);
+}
+
+function syncEntry(entry) {
+  var payload = {
+    studentName: state.student.name,
+    coreValue1: state.student.value1,
+    coreValue2: state.student.value2,
+    day: entry.day,
+    theme: entry.theme,
+    realMoment: entry.realMoment,
+    horizon: entry.horizon,
+    pin: entry.pin,
+    hasPhoto: !!entry.photo,
+    hasVoice: !!entry.hasVoice,
+    timestamp: entry.timestamp
+  };
+  fetch(SHEETS_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  }).then(function() {
+    setSyncBadge('synced');
+  }).catch(function() {
+    setSyncBadge('error');
+  });
+}
+
+function setSyncBadge(status) {
+  var badge = document.getElementById('sync-badge');
+  badge.className = 'sync-badge ' + status;
+  badge.id = 'sync-badge';
+  badge.className = status;
+  // Reset classes properly
+  badge.classList.remove('synced','syncing','error');
+  badge.classList.add(status);
+}
+
+// ===== STREAM VIEW =====
+function renderStream() {
+  var filledEntries = Object.values(state.entries).filter(function(e) {
+    return e && (e.realMoment || e.horizon || e.pin);
+  }).sort(function(a,b){ return a.day - b.day; });
+
+  if (!filledEntries.length) {
+    document.getElementById('stream-entries').innerHTML =
+      '<div class="stream-empty">Your journey log is empty.<br>Open a day on the Map to begin writing.</div>';
+    return;
+  }
+
+  var html = filledEntries.map(function(e) {
+    var d = DAYS.find(function(x){ return x.day === e.day; });
+    return '<div class="stream-entry" onclick="openDay(' + e.day + ')">' +
+      '<div class="stream-entry-head">' +
+        '<span class="stream-entry-day">Day ' + e.day + ' — ' + (d ? d.theme : '') + '</span>' +
+        '<span class="stream-entry-pin">' + (e.pin || '') + '</span>' +
+      '</div>' +
+      '<div class="stream-entry-theme">' + (d ? d.sub : '') + '</div>' +
+      (e.realMoment ? '<div class="stream-entry-text">' + escHtml(e.realMoment.substring(0,180)) + (e.realMoment.length > 180 ? '…' : '') + '</div>' : '') +
+    '</div>';
+  }).join('');
+  document.getElementById('stream-entries').innerHTML = html;
+}
+
+// ===== REEL VIEW =====
+var reelDays = [];
+function renderReel() {
+  reelDays = Object.values(state.entries).filter(function(e) {
+    return e && (e.realMoment || e.horizon || e.pin);
+  }).sort(function(a,b){ return a.day - b.day; });
+
+  if (state.reelIndex >= reelDays.length) state.reelIndex = Math.max(0, reelDays.length - 1);
+  renderReelCard();
+}
+
+function renderReelCard() {
+  var card = document.getElementById('reel-card');
+  var counter = document.getElementById('reel-counter');
+
+  if (!reelDays.length) {
+    card.className = 'reel-card reel-empty-card';
+    card.innerHTML = 'No entries yet.<br>Start writing on the Map.';
+    counter.textContent = '0 / 0';
+    document.getElementById('reel-prev').disabled = true;
+    document.getElementById('reel-next').disabled = true;
+    return;
+  }
+
+  var e = reelDays[state.reelIndex];
+  var d = DAYS.find(function(x){ return x.day === e.day; });
+  card.className = 'reel-card';
+  card.innerHTML =
+    '<div class="reel-card-top">' +
+      '<div class="reel-day-num">Day ' + e.day + '</div>' +
+      '<div class="reel-day-theme">' + (d ? d.theme.toUpperCase() : '') + '</div>' +
+      '<div class="reel-pin">' + (e.pin || '•') + '</div>' +
+    '</div>' +
+    (e.realMoment ? '<div class="reel-text">“' + escHtml(e.realMoment) + '”</div>' : '<div class="reel-text" style="opacity:0.4">(no entry)</div>') +
+    (e.horizon ? '<div class="reel-horizon">→ ' + escHtml(e.horizon) + '</div>' : '');
+
+  counter.textContent = (state.reelIndex + 1) + ' / ' + reelDays.length;
+  document.getElementById('reel-prev').disabled = state.reelIndex === 0;
+  document.getElementById('reel-next').disabled = state.reelIndex === reelDays.length - 1;
+}
+
+function reelNav(dir) {
+  state.reelIndex = Math.max(0, Math.min(reelDays.length - 1, state.reelIndex + dir));
+  renderReelCard();
+}
+
+// ===== ATLAS VIEW =====
+function renderAtlas() {
+  document.getElementById('atlas-name').textContent = state.student.name || 'Traveler';
+  document.getElementById('atlas-values').textContent =
+    [state.student.value1, state.student.value2].filter(Boolean).join(' · ');
+
+  // Group by week
+  var weeks = {};
+  DAYS.forEach(function(d) { if (!weeks[d.week]) weeks[d.week] = []; weeks[d.week].push(d); });
+
+  var html = '';
+  Object.keys(weeks).forEach(function(w) {
+    var weekEntries = weeks[w].filter(function(d) {
+      var e = state.entries[d.day];
+      return e && (e.realMoment || e.horizon || e.pin);
+    });
+    if (!weekEntries.length) return;
+    html += '<div class="atlas-week"><div class="atlas-week-title">' + WEEK_TITLES[w] + '</div>';
+    weekEntries.forEach(function(d) {
+      var e = state.entries[d.day];
+      if (!e) return;
+      html += '<div class="atlas-entry">' +
+        '<div class="atlas-entry-head">' +
+          '<span class="atlas-entry-day">Day ' + d.day + '</span>' +
+          '<span class="atlas-entry-theme">' + d.theme + '</span>' +
+          '<span class="atlas-entry-pin">' + (e.pin || '') + '</span>' +
+        '</div>' +
+        (e.realMoment ? '<div class="atlas-entry-moment">' + escHtml(e.realMoment) + '</div>' : '') +
+        (e.horizon ? '<div class="atlas-entry-horizon">→ ' + escHtml(e.horizon) + '</div>' : '') +
+      '</div>';
+    });
+    html += '</div>';
+  });
+
+  if (!html) html = '<div class="stream-empty">Begin writing to build your atlas.</div>';
+  document.getElementById('atlas-content').innerHTML = html;
+}
+
+// ===== NAVIGATION =====
+function showView(name) {
+  state.currentView = name;
+  document.querySelectorAll('.view').forEach(function(v){ v.classList.remove('active'); });
+  document.querySelectorAll('.nav-btn').forEach(function(b){ b.classList.remove('active'); });
+  document.getElementById('view-' + name).classList.add('active');
+  document.getElementById('nav-' + name).classList.add('active');
+  if (name === 'reel') renderReel();
+  if (name === 'atlas') renderAtlas();
+  if (name === 'stream') renderStream();
+}
+
+// ===== SETUP INFO =====
+function showSetupInfo() {
+  alert(
+    'HOW TO ENABLE GOOGLE SHEETS SYNC\n\n' +
+    '1. Go to script.google.com\n' +
+    '2. Create a new project\n' +
+    '3. Paste the contents of dt-sheets.gs\n' +
+    '4. Click Deploy > New Deployment\n' +
+    '5. Type: Web App\n' +
+    '6. Execute as: Me\n' +
+    '7. Who has access: Anyone\n' +
+    '8. Copy the deployment URL\n' +
+    '9. Open dt-atlas.html in a text editor\n' +
+    '10. Find: var SHEETS_URL = \'\'\n' +
+    '11. Paste URL between the quotes\n' +
+    '12. Save and reopen the file\n\n' +
+    'Entries will then sync to Google Sheets automatically.'
+  );
+}
+
+// ===== UTILS =====
+function escHtml(s) {
+  return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// Close panel on backdrop touch
+document.addEventListener('click', function(e) {
+  var panel = document.getElementById('day-panel');
+  if (panel.classList.contains('open') && !panel.contains(e.target)) {
+    var isNodeClick = e.target.closest && e.target.closest('.day-node');
+    if (!isNodeClick) closePanel();
+  }
+});
+
+// Swipe to close panel
+var touchStartY = 0;
+document.getElementById('day-panel').addEventListener('touchstart', function(e) {
+  touchStartY = e.touches[0].clientY;
+}, { passive: true });
+document.getElementById('day-panel').addEventListener('touchmove', function(e) {
+  var dy = e.touches[0].clientY - touchStartY;
+  if (dy > 60) closePanel();
+}, { passive: true });
+
+// Start
+init();
+</script>
+</body>
+</html>
