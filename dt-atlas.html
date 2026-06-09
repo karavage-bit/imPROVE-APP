@@ -168,9 +168,9 @@ body{font-family:'Lora',serif;background:#2c1810;color:#1a2742;-webkit-font-smoo
 .atlas-print-btn{display:block;width:100%;max-width:300px;margin:20px auto 0;padding:11px;background:var(--ink);color:var(--gold);font-family:'Cinzel',serif;font-size:0.68rem;letter-spacing:0.2em;text-transform:uppercase;border:none;border-radius:8px;cursor:pointer}
 
 /* ONBOARDING */
-#onboarding{position:fixed;inset:0;background:rgba(26,39,66,0.93);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px)}
+#onboarding{position:fixed;inset:0;background:rgba(26,39,66,0.93);z-index:200;display:flex;align-items:flex-start;justify-content:center;padding:20px;backdrop-filter:blur(4px);overflow-y:auto}
 #onboarding.hidden{display:none}
-.ob-card{background:var(--paper);border-radius:12px;padding:30px 26px;max-width:420px;width:100%;text-align:center;background-image:radial-gradient(ellipse at 30% 20%,rgba(184,137,63,0.12) 0%,transparent 60%);box-shadow:0 16px 48px rgba(0,0,0,0.5)}
+.ob-card{background:var(--paper);border-radius:12px;padding:24px 22px;max-width:420px;width:100%;text-align:center;background-image:radial-gradient(ellipse at 30% 20%,rgba(184,137,63,0.12) 0%,transparent 60%);box-shadow:0 16px 48px rgba(0,0,0,0.5);margin:auto}
 .ob-title{font-family:'Cinzel',serif;color:var(--ink);font-size:1.35rem;font-weight:700;letter-spacing:0.1em;margin-bottom:4px}
 .ob-subtitle{font-family:'Lora',serif;font-style:italic;color:var(--smoke);font-size:0.8rem;margin-bottom:22px}
 .ob-field{margin-bottom:14px;text-align:left}
@@ -402,10 +402,10 @@ body{font-family:'Lora',serif;background:#2c1810;color:#1a2742;-webkit-font-smoo
     </svg>
     <div class="ob-title">Distance Traveled</div>
     <div class="ob-subtitle">TOL Summer 2026 — University of Pittsburgh<br>Your 40-day leadership atlas</div>
-    <div class="ob-field"><label class="ob-label" for="ob-name">Your Full Name</label><input class="ob-input" id="ob-name" type="text" placeholder="First Last" autocomplete="name"></div>
-    <div class="ob-field"><label class="ob-label" for="ob-val1">Core Value #1</label><input class="ob-input" id="ob-val1" type="text" placeholder="e.g. Courage" autocomplete="off"></div>
-    <div class="ob-field"><label class="ob-label" for="ob-val2">Core Value #2</label><input class="ob-input" id="ob-val2" type="text" placeholder="e.g. Integrity" autocomplete="off"></div>
-    <button class="ob-btn" onclick="finishOnboarding()">Begin the Journey</button>
+    <div class="ob-field"><label class="ob-label" for="ob-name">Your Full Name</label><input class="ob-input" id="ob-name" type="text" placeholder="First Last" autocomplete="name" onkeydown="if(event.key==='Enter'){document.getElementById('ob-val1').focus();}"></div>
+    <div class="ob-field"><label class="ob-label" for="ob-val1">Core Value #1</label><input class="ob-input" id="ob-val1" type="text" placeholder="e.g. Courage" autocomplete="off" onkeydown="if(event.key==='Enter'){document.getElementById('ob-val2').focus();}"></div>
+    <div class="ob-field"><label class="ob-label" for="ob-val2">Core Value #2</label><input class="ob-input" id="ob-val2" type="text" placeholder="e.g. Integrity" autocomplete="off" onkeydown="if(event.key==='Enter'){finishOnboarding();}"></div>
+    <button class="ob-btn" onclick="finishOnboarding()" id="ob-submit-btn">Begin the Journey</button>
     <div class="ob-note">Your entries save to this device automatically. Add the Google Sheets URL to sync with your instructor.</div>
   </div>
 </div>
@@ -582,7 +582,7 @@ function renderMap(){
     weeks[w].forEach(function(d){
       var e=state.entries[d.day];
       var filled=e&&(e.realMoment||e.horizon||e.pin);
-      html+='<div class="day-node'+(filled?' filled':'')'" onclick="openDay('+d.day+')">';
+      html+='<div class="day-node'+(filled?' filled':''+'" onclick="openDay('+d.day+')">');
       html+='<div class="day-num">'+d.day+'</div>';
       html+='<div class="day-theme">'+escHtml(d.theme)+'</div>';
       if(filled&&e.pin) html+='<div style="font-size:0.8rem">'+e.pin+'</div>';
