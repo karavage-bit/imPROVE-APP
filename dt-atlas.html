@@ -405,6 +405,7 @@ body{font-family:'Lora',serif;background:#2c1810;color:#1a2742;-webkit-font-smoo
     <div class="ob-field"><label class="ob-label" for="ob-name">Your Full Name</label><input class="ob-input" id="ob-name" type="text" placeholder="First Last" autocomplete="name" onkeydown="if(event.key==='Enter'){document.getElementById('ob-val1').focus();}"></div>
     <div class="ob-field"><label class="ob-label" for="ob-val1">Core Value #1</label><input class="ob-input" id="ob-val1" type="text" placeholder="e.g. Courage" autocomplete="off" onkeydown="if(event.key==='Enter'){document.getElementById('ob-val2').focus();}"></div>
     <div class="ob-field"><label class="ob-label" for="ob-val2">Core Value #2</label><input class="ob-input" id="ob-val2" type="text" placeholder="e.g. Integrity" autocomplete="off" onkeydown="if(event.key==='Enter'){finishOnboarding();}"></div>
+    <div id="ob-error" style="display:none;color:#7a3b3b;font-family:Lora,serif;font-style:italic;font-size:0.78rem;margin:8px 0 4px;padding:8px 10px;background:rgba(122,59,59,0.1);border-radius:6px;border-left:3px solid #7a3b3b;text-align:left"></div>
     <button class="ob-btn" onclick="finishOnboarding()" id="ob-submit-btn">Begin the Journey</button>
     <div class="ob-note">Your entries save to this device automatically. Add the Google Sheets URL to sync with your instructor.</div>
   </div>
@@ -526,13 +527,39 @@ function finishOnboarding(){
   var name=document.getElementById('ob-name').value.trim();
   var v1=document.getElementById('ob-val1').value.trim();
   var v2=document.getElementById('ob-val2').value.trim();
-  if(!name){document.getElementById('ob-name').focus();return;}
-  if(!v1){document.getElementById('ob-val1').focus();return;}
-  if(!v2){document.getElementById('ob-val2').focus();return;}
+  var errEl=document.getElementById('ob-error');
+  // Reset borders
+  ['ob-name','ob-val1','ob-val2'].forEach(function(id){
+    document.getElementById(id).style.borderColor='';
+  });
+  if(!name){
+    errEl.textContent='Please enter your full name to begin.';
+    errEl.style.display='block';
+    document.getElementById('ob-name').style.borderColor='#7a3b3b';
+    document.getElementById('ob-name').focus();
+    return;
+  }
+  if(!v1){
+    errEl.textContent='Please enter your first Core Value.';
+    errEl.style.display='block';
+    document.getElementById('ob-val1').style.borderColor='#7a3b3b';
+    document.getElementById('ob-val1').focus();
+    return;
+  }
+  if(!v2){
+    errEl.textContent='Please enter your second Core Value.';
+    errEl.style.display='block';
+    document.getElementById('ob-val2').style.borderColor='#7a3b3b';
+    document.getElementById('ob-val2').focus();
+    return;
+  }
+  errEl.style.display='none';
   state.student={name:name,value1:v1,value2:v2};
   saveToStorage();
-  document.getElementById('onboarding').classList.add('hidden');
-  renderAll();
+  var ob=document.getElementById('onboarding');
+  ob.style.display='none';
+  ob.classList.add('hidden');
+  try{renderAll();}catch(e){console.error('renderAll error:',e);}
 }
 
 function editProfile(){
@@ -582,7 +609,7 @@ function renderMap(){
     weeks[w].forEach(function(d){
       var e=state.entries[d.day];
       var filled=e&&(e.realMoment||e.horizon||e.pin);
-      html+='<div class="day-node'+(filled?' filled':''+'" onclick="openDay('+d.day+')">');
+      html+='<div class="day-node'+(filled?' filled':''+'" onclick="openDay('+d.day+')">';
       html+='<div class="day-num">'+d.day+'</div>';
       html+='<div class="day-theme">'+escHtml(d.theme)+'</div>';
       if(filled&&e.pin) html+='<div style="font-size:0.8rem">'+e.pin+'</div>';
