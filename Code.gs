@@ -117,20 +117,38 @@ function doPost(e) {
 
 /* ---------- live per-student status tab ----------
    Always called from inside the doPost lock, so it is safe to read the
-   sheet, find the student's row, and overwrite it in place. */
+   sheet, find the student's row, and overwrite it in place.
+   Rows are matched on a NORMALIZED name (case- and spacing-insensitive)
+   so "john  smith", "John Smith", and "JOHN SMITH" all land on one row
+   even though students retype their name by hand. */
 function updateStatus(ss, data) {
   if (!data.studentName || String(data.studentName).indexOf('HEALTH CHECK') === 0) return;
   var headers = ['studentName','sessionsComplete','sessionsTotal','percentComplete','lastUpdate','lastSession'];
   var sh = getOrCreateSheet(ss, STATUS_SHEET, headers);
+  var display = normName(data.studentName);
+  var key = matchKey(display);
   var values = sh.getDataRange().getValues();
   var rowIdx = -1;
   for (var i = 1; i < values.length; i++) {
-    if (String(values[i][0]) === String(data.studentName)) { rowIdx = i + 1; break; }
+    if (matchKey(values[i][0]) === key) { rowIdx = i + 1; break; }
   }
-  var row = [ str(data.studentName), num(data.sessionsComplete), num(data.sessionsTotal),
+  var row = [ display, num(data.sessionsComplete), num(data.sessionsTotal),
               num(data.percentComplete), new Date(), str(data.theme) ];
   if (rowIdx === -1) sh.appendRow(row);
   else sh.getRange(rowIdx, 1, 1, row.length).setValues([row]);
+}
+
+/* Tidy a name for display: collapse spaces, trim, Title Case. Mirrors the
+   app's normalizeName() so the Sheet shows clean, consistent names. */
+function normName(raw) {
+  var n = String(raw == null ? '' : raw).replace(/\s+/g, ' ').trim();
+  return n.replace(/\S+/g, function (w) {
+    return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+  });
+}
+/* Case/spacing-insensitive key used only for matching one student to one row. */
+function matchKey(raw) {
+  return String(raw == null ? '' : raw).replace(/\s+/g, ' ').trim().toLowerCase();
 }
 
 /* ---------- health endpoint for the app dashboard (JSONP) ---------- */
@@ -222,7 +240,8 @@ function healthCheck() {
     'Unique students submitting: ' + snap.students + '\n' +
     'Submissions in last 24 hours: ' + recent + '\n' +
     'Most recent submission: ' + (snap.lastSubmission || 'none yet') + '\n' +
-    'Sheet writable: ' + (writeOk ? 'yes' : 'NO') + '\n\n' +
+    'Sheet writable: ' + (writeOk ? 'yes' : 'NO') + '\n' +
+    'Last Drive backup: ' + (getMeta('lastBackup') || 'none yet') + '\n\n' +
     (problems.length
         ? 'ISSUES:\n - ' + problems.join('\n - ') + '\n\n'
         : 'No issues detected.\n\n') +
@@ -232,17 +251,115 @@ function healthCheck() {
   MailApp.sendEmail(RECIPIENT, subject, body);
 }
 
-/* ---------- set the two daily triggers (run once) ---------- */
+/* ---------- set the daily triggers (run once) ----------
+   Re-run this any time; it clears its own old triggers first, so it is
+   safe to run again after you paste an updated version of this file. */
 function createTriggers() {
+  var mine = { healthCheck: true, backupSheet: true };
   var trigs = ScriptApp.getProjectTriggers();
   for (var i = 0; i < trigs.length; i++) {
-    if (trigs[i].getHandlerFunction() === 'healthCheck') ScriptApp.deleteTrigger(trigs[i]);
+    if (mine[trigs[i].getHandlerFunction()]) ScriptApp.deleteTrigger(trigs[i]);
   }
   ScriptApp.newTrigger('healthCheck').timeBased().atHour(5).everyDays(1).create();
   ScriptApp.newTrigger('healthCheck').timeBased().atHour(17).everyDays(1).create();
+  ScriptApp.newTrigger('backupSheet').timeBased().atHour(2).everyDays(1).create();
   MailApp.sendEmail(RECIPIENT, 'TOL App: monitoring is set up',
-    'Your 5:00 AM and 5:00 PM health checks are now scheduled.\n' +
-    'You will get an email at each check with the status of the app and student submissions.');
+    'Your automated jobs are now scheduled:\n' +
+    ' - 5:00 AM and 5:00 PM: health check email with app + submission status.\n' +
+    ' - 2:00 AM: full backup copy of your Sheet saved to Google Drive\n' +
+    '   (folder "' + BACKUP_FOLDER + '", keeping the ' + BACKUP_KEEP + ' most recent).\n\n' +
+    'Note: the backup needs Google Drive permission. The first time it runs\n' +
+    '(or when you click Run on backupSheet) you may be asked to authorize.');
+}
+
+/* ---------- daily off-site backup of the whole Sheet ----------
+   A single corrupted or deleted Sheet would otherwise lose everything.
+   This keeps a rolling set of full copies in your Drive. */
+var BACKUP_FOLDER = 'TOL Distance Traveled Backups';
+var BACKUP_KEEP   = 14; // keep two weeks of daily copies
+
+function backupSheet() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var folder = getBackupFolder_();
+  var stamp = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HHmm');
+  DriveApp.getFileById(ss.getId()).makeCopy(ss.getName() + ' BACKUP ' + stamp, folder);
+  pruneBackups_(folder);
+  setMeta('lastBackup', new Date().toLocaleString());
+}
+function getBackupFolder_() {
+  var it = DriveApp.getFoldersByName(BACKUP_FOLDER);
+  return it.hasNext() ? it.next() : DriveApp.createFolder(BACKUP_FOLDER);
+}
+function pruneBackups_(folder) {
+  var files = [];
+  var it = folder.getFiles();
+  while (it.hasNext()) { var f = it.next(); files.push({ f: f, t: f.getDateCreated().getTime() }); }
+  files.sort(function (a, b) { return b.t - a.t; }); // newest first
+  for (var i = BACKUP_KEEP; i < files.length; i++) files[i].f.setTrashed(true);
+}
+
+/* ---------- one-time load test: prove concurrent saves are safe ----------
+   Run this ONCE from the Apps Script editor (choose loadTest, click Run)
+   AFTER you have deployed the web app. It fires 15 saves at your live
+   endpoint at the same instant, confirms all 15 distinct rows landed with
+   no duplicates and nothing lost, cleans up the test rows, and emails you
+   the result. The test names start with "HEALTH CHECK" so they never touch
+   the Status tab or your real student counts. */
+function loadTest() {
+  var url;
+  try { url = ScriptApp.getService().getUrl(); } catch (e) { url = ''; }
+  if (!url) {
+    MailApp.sendEmail(RECIPIENT, 'TOL App Load Test: NOT RUN',
+      'Could not find the deployed web app URL. Deploy the web app first ' +
+      '(Deploy -> New deployment -> Web app), then run loadTest again.');
+    return 'No web app URL - deploy first.';
+  }
+
+  var N = 15;
+  var runId = 'HEALTH CHECK LT' + Date.now();
+  var requests = [];
+  for (var i = 1; i <= N; i++) {
+    var payload = {
+      studentName: runId + '-' + i, day: i, week: 1, theme: 'Load test',
+      hookResponse: 'lt', distance: 'lt', pin: '*', hasPhoto: false,
+      sessionComplete: false, sessionsComplete: 0, sessionsTotal: 30,
+      percentComplete: 0, timestamp: Date.now()
+    };
+    requests.push({ url: url, method: 'post', contentType: 'text/plain',
+                    payload: JSON.stringify(payload), muteHttpExceptions: true });
+  }
+
+  // fetchAll issues all requests in parallel - a real concurrency test of the lock.
+  UrlFetchApp.fetchAll(requests);
+  Utilities.sleep(2500); // let every write settle
+
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sh = ss.getSheetByName(RESPONSES_SHEET);
+  var v = sh.getDataRange().getValues();
+  var counts = {}, rowsToDelete = [];
+  for (var r = v.length - 1; r >= 1; r--) {
+    var nm = String(v[r][1]);
+    if (nm.indexOf(runId) === 0) { counts[nm] = (counts[nm] || 0) + 1; rowsToDelete.push(r + 1); }
+  }
+  var distinct = Object.keys(counts).length;
+  var dupes = 0; for (var k in counts) if (counts[k] > 1) dupes += counts[k] - 1;
+
+  // clean up test rows (delete bottom-up so indexes stay valid)
+  rowsToDelete.sort(function (a, b) { return b - a; });
+  for (var d = 0; d < rowsToDelete.length; d++) sh.deleteRow(rowsToDelete[d]);
+
+  var pass = (distinct === N && dupes === 0);
+  var msg =
+    'TOL App load test - ' + (pass ? 'PASSED' : 'FAILED') + '\n\n' +
+    'Fired ' + N + ' saves at the same instant at:\n' + url + '\n\n' +
+    'Distinct rows that landed: ' + distinct + '  (expected ' + N + ')\n' +
+    'Duplicate rows: ' + dupes + '  (expected 0)\n' +
+    'Test rows cleaned up afterward: ' + rowsToDelete.length + '\n\n' +
+    (pass
+      ? 'All saves arrived exactly once. The backend handles your whole class saving together.'
+      : 'MISMATCH - some saves were lost or duplicated. Re-check the lock in doPost and that the web app is deployed with access set to Anyone.');
+  MailApp.sendEmail(RECIPIENT, 'TOL App Load Test: ' + (pass ? 'PASSED' : 'FAILED'), msg);
+  return msg;
 }
 
 /* ---------- helpers ---------- */

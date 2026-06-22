@@ -716,9 +716,19 @@ function updateSyncBadge(){
 }
 
 /* ===== onboarding ===== */
+/* Normalize a typed name so the SAME student always becomes the SAME
+   identity every time: trim ends, collapse inner spaces, and Title Case
+   each word. "  john   SMITH " -> "John Smith". This is what keeps a
+   student on one row even though they retype their name by hand. */
+function normalizeName(raw){
+  var n=String(raw==null?'':raw).replace(/\s+/g,' ').trim();
+  return n.replace(/\S+/g,function(w){
+    return w.charAt(0).toUpperCase()+w.slice(1).toLowerCase();
+  });
+}
 function finishOnboarding(){
-  var name=document.getElementById('ob-name').value.trim();
-  var _sel=document.getElementById('ob-name-select'); if(_sel && _sel.style.display!=='none' && _sel.value){ name=_sel.value.trim(); }
+  var name=normalizeName(document.getElementById('ob-name').value);
+  var _sel=document.getElementById('ob-name-select'); if(_sel && _sel.style.display!=='none' && _sel.value){ name=normalizeName(_sel.value); }
   var v1=document.getElementById('ob-val1').value.trim();
   var v2=document.getElementById('ob-val2').value.trim();
   var st=document.getElementById('ob-start').value.trim();
@@ -732,7 +742,7 @@ function finishOnboarding(){
 }
 function editProfile(){
   var n=prompt('Your name:',state.student.name); if(n===null) return;
-  if(n.trim()) state.student.name=n.trim();
+  if(normalizeName(n)) state.student.name=normalizeName(n);
   var v1=prompt('Core Value #1:',state.student.value1); if(v1!==null && v1.trim()) state.student.value1=v1.trim();
   var v2=prompt('Core Value #2:',state.student.value2); if(v2!==null && v2.trim()) state.student.value2=v2.trim();
   var st=prompt('Your Starting Line (the baseline you measure against in Week 6):',state.student.startLine||''); if(st!==null) state.student.startLine=st.trim();
