@@ -137,7 +137,8 @@ body{font-family:'Lora',serif;background:#2c1810;color:#1a2742;-webkit-font-smoo
 .stream-empty{text-align:center;font-family:'Lora',serif;font-style:italic;color:var(--smoke);padding:40px 20px;font-size:0.83rem}
 
 /* REEL VIEW */
-#view-reel{background:var(--ink);display:flex;flex-direction:column}
+#view-reel{background:var(--ink)}
+.view#view-reel.active{display:flex;flex-direction:column}
 .reel-inner{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;overflow-y:auto}
 .reel-card{width:100%;max-width:500px;background:var(--paper);border-radius:12px;padding:28px 24px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.5);background-image:radial-gradient(ellipse at 30% 20%,rgba(184,137,63,0.1) 0%,transparent 60%);min-height:300px;display:flex;flex-direction:column;justify-content:space-between}
 .reel-day-num{font-family:'Cinzel',serif;font-size:2.8rem;font-weight:700;color:var(--ink);line-height:1}
@@ -609,7 +610,7 @@ function renderMap(){
     weeks[w].forEach(function(d){
       var e=state.entries[d.day];
       var filled=e&&(e.realMoment||e.horizon||e.pin);
-      html+='<div class="day-node'+(filled?' filled':''+'" onclick="openDay('+d.day+')">';
+      html+='<div class="day-node'+(filled?' filled':'')+'" onclick="openDay('+d.day+')">';
       html+='<div class="day-num">'+d.day+'</div>';
       html+='<div class="day-theme">'+escHtml(d.theme)+'</div>';
       if(filled&&e.pin) html+='<div style="font-size:0.8rem">'+e.pin+'</div>';
